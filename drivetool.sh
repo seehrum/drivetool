@@ -2,9 +2,18 @@
 
 declare -r MOUNT_POINT="/media/flashdrive"
 
+# Define sudo command or alternative for elevated privileges
+SUDO="sudo"
+
+# Check for sudo access at the start if a sudo command is used
+if [[ -n "$SUDO" ]] && ! "$SUDO" -v &> /dev/null; then
+    echo "Error: This script requires sudo access to run." >&2
+    exit 1
+fi
+
 # Function to check for required commands
 check_dependencies() {
-    local dependencies=(sudo lsblk mkdir mount umount cp du grep diff rsync sync blkid)
+    local dependencies=(lsblk mkdir mount umount cp du grep diff rsync sync blkid mkfs.exfat)
     local missing=()
     for cmd in "${dependencies[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
@@ -24,7 +33,7 @@ safe_unmount() {
         echo "Syncing device..."
         sync
         echo "$device is currently mounted, attempting to unmount..."
-        sudo umount "$device" && echo "$device unmounted successfully." || { echo "Failed to unmount $device."; return 1; }
+        "$SUDO" umount "$device" && echo "$device unmounted successfully." || { echo "Failed to unmount $device."; return 1; }
     fi
 }
 
@@ -33,8 +42,8 @@ ensure_mounted() {
     local device="$1"
     if ! mount | grep -q "$MOUNT_POINT"; then
         echo "Mounting $device..."
-        sudo mkdir -p "$MOUNT_POINT"
-        sudo mount "$device" "$MOUNT_POINT" || { echo "Failed to mount $device."; exit 1; }
+        "$SUDO" mkdir -p "$MOUNT_POINT"
+        "$SUDO" mount "$device" "$MOUNT_POINT" || { echo "Failed to mount $device."; exit 1; }
     else
         echo "Device is already mounted on $MOUNT_POINT."
     fi
@@ -48,18 +57,18 @@ copy_files() {
 
     if [[ -d "$source" ]]; then
         echo "Copying directory $source to $destination using 'cp -r'..."
-        sudo cp -r "$source" "$dest_path" && echo "$source has been copied."
+        "$SUDO" cp -r "$source" "$dest_path" && echo "$source has been copied."
     else
         echo "Copying file $source to $destination using 'cp'..."
-        sudo cp "$source" "$dest_path" && echo "$source has been copied."
+        "$SUDO" cp "$source" "$dest_path" && echo "$source has been copied."
     fi
     
     sync
     echo "Syncing file system..."
-    sudo mount -o remount,sync "$MOUNT_POINT"
+    "$SUDO" mount -o remount,sync "$MOUNT_POINT"
 
     # Verify copy integrity
-    if sudo du -b "$source" && sudo du -b "$dest_path" && sudo diff -qr "$source" "$dest_path"; then
+    if "$SUDO" du -b "$source" && "$SUDO" du -b "$dest_path" && "$SUDO" diff -qr "$source" "$dest_path"; then
         echo "Verification successful: No differences found."
     else
         echo "Verification failed: Differences found!"
@@ -72,7 +81,7 @@ rsync_files() {
     local source="$1"
     local destination="$2"
     echo "Copying $source to $destination using rsync..."
-    sudo rsync -avh --progress "$source" "$destination" && echo "Files copied successfully using rsync."
+    "$SUDO" rsync -avh --progress "$source" "$destination" && echo "Files copied successfully using rsync."
 }
 
 
@@ -80,7 +89,7 @@ rsync_files() {
 check_filesystem() {
     local device="$1"
     local blkid_output
-    blkid_output=$(sudo blkid -o export "$device")
+    blkid_output=$("$SUDO" blkid -o export "$device")
     if [[ -n "$blkid_output" ]]; then
         echo -e "Warning: $device has existing data:"
         echo "$blkid_output" | grep -E '^(TYPE|PTTYPE)='
@@ -107,7 +116,7 @@ format_drive() {
     fi
     
     echo "Formatting $device..."
-    sudo mkfs.exfat "$device" && echo "Drive formatted successfully." || echo "Formatting failed."
+    "$SUDO" mkfs.exfat "$device" && echo "Drive formatted successfully." || echo "Formatting failed."
 }
 
 # Function to display usage information
