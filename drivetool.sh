@@ -4,7 +4,7 @@ declare -r MOUNT_POINT="/media/flashdrive"
 
 # Function to check for required commands
 check_dependencies() {
-    local dependencies=(sudo lsblk mkdir mount umount cp du grep diff rsync sync)
+    local dependencies=(sudo lsblk mkdir mount umount cp du grep diff rsync sync blkid)
     local missing=()
     for cmd in "${dependencies[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
@@ -75,17 +75,35 @@ rsync_files() {
     sudo rsync -avh --progress "$source" "$destination" && echo "Files copied successfully using rsync."
 }
 
+
+# Function to check filesystem existence
+check_filesystem() {
+    local device="$1"
+    local blkid_output
+    blkid_output=$(sudo blkid -o export "$device")
+    if [[ -n "$blkid_output" ]]; then
+        echo -e "Warning: $device has existing data:"
+        echo "$blkid_output" | grep -E '^(TYPE|PTTYPE)='
+        echo -e "Please confirm to proceed with formatting:"
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Function to format the drive
 format_drive() {
     local device="$1"
     echo "Checking if device $device is mounted..."
     safe_unmount "$device" || return 1
-    
-    # Confirmation from user
-    read -p "Are you sure you want to format "$device"? [y/N]: " confirm
-    if [[ $confirm != [yY] ]]; then
-        echo "Formatting aborted."
-        return 1
+
+    # Check existing filesystems or partition tables
+    if check_filesystem "$device"; then
+        read -p "Are you sure you want to format $device? [y/N]: " confirm
+        if [[ $confirm != [yY] ]]; then
+            echo "Formatting aborted."
+            return 1
+        fi
     fi
     
     echo "Formatting $device..."
