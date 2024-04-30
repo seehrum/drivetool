@@ -103,8 +103,8 @@ help() {
     echo "  -f, -F DEVICE                Format DEVICE."
     echo
     echo "Examples:"
-    echo "  $0 -C /dev/sdx /path/to/data  # Copy /path/to/data to /dev/sdx after mounting it using 'cp'."
-    echo "  $0 -R /dev/sdx /path/to/data  # Copy /path/to/data to /dev/sdx after mounting it using 'rsync'."
+    echo "  $0 -C /path/to/data /dev/sdx # Copy /path/to/data to /dev/sdx after mounting it using 'cp'."
+    echo "  $0 -R /path/to/data /dev/sdx # Copy /path/to/data to /dev/sdx after mounting it using 'rsync'."
     echo "  $0 -L                        # List all block devices."
     echo "  $0 -F /dev/sdx               # Format /dev/sdx."
 }
