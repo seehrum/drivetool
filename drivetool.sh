@@ -4,7 +4,7 @@ declare -r MOUNT_POINT="/media/flashdrive"
 
 # Function to check for required commands
 check_dependencies() {
-    local dependencies=(lsblk mkdir mount umount cp du grep diff rsync sync)
+    local dependencies=(sudo lsblk mkdir mount umount cp du grep diff rsync sync)
     local missing=()
     for cmd in "${dependencies[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
