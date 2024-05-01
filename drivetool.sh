@@ -13,7 +13,7 @@ fi
 
 # Function to check for required commands
 check_dependencies() {
-    local dependencies=(lsblk mkdir mount umount cp du grep diff rsync sync blkid mkfs.exfat)
+    local dependencies=(lsblk mkdir rmdir mount umount cp du grep diff rsync sync blkid mkfs.exfat)
     local missing=()
     for cmd in "${dependencies[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
@@ -77,7 +77,7 @@ rsync_files() {
     local source="$1"
     local destination="$2"
     echo "Copying $source to $destination using rsync..."
-    "$SUDO" rsync -avh --progress "$source" "$destination" && echo "Files copied successfully using rsync."
+    "$SUDO" rsync -avh --no-perms --no-owner --no-group --progress "$source" "$destination" && echo "Files copied successfully using rsync."
 }
 
 
@@ -139,12 +139,14 @@ case "$1" in
         ensure_mounted "$3"
         copy_files "$2" "$MOUNT_POINT"
         safe_unmount "$MOUNT_POINT"
+	"$SUDO" rmdir "$MOUNT_POINT"
         ;;
     -R | -r)
         check_dependencies
         ensure_mounted "$3"
         rsync_files "$2" "$MOUNT_POINT"
         safe_unmount "$MOUNT_POINT"
+	"$SUDO" rmdir "$MOUNT_POINT"
         ;;
     -L | -l)
         lsblk -o NAME,MODEL,SERIAL,VENDOR,TRAN
