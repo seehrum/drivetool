@@ -63,10 +63,6 @@ copy_files() {
         "$SUDO" cp "$source" "$dest_path" && echo "$source has been copied."
     fi
     
-    sync
-    echo "Syncing file system..."
-    "$SUDO" mount -o remount,sync "$MOUNT_POINT"
-
     # Verify copy integrity
     if "$SUDO" du -b "$source" && "$SUDO" du -b "$dest_path" && "$SUDO" diff -qr "$source" "$dest_path"; then
         echo "Verification successful: No differences found."
