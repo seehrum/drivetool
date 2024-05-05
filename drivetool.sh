@@ -122,12 +122,16 @@ help() {
     echo "Options:"
     echo "  -c, -C DEVICE SOURCE_PATH    Mount DEVICE and copy SOURCE_PATH to it using 'cp'."
     echo "  -r, -R DEVICE SOURCE_PATH    Mount DEVICE and copy SOURCE_PATH to it using 'rsync'."
+    echo "  -M, -m DEVICE                Mount the specified DEVICE to the predefined mount point."
+    echo "  -U, -u                       Unmount the DEVICE from the predefined mount point and remove the mount directory."
     echo "  -l, -L                       List information about block devices."
     echo "  -f, -F DEVICE                Format DEVICE."
     echo
     echo "Examples:"
     echo "  $0 -C /path/to/data /dev/sdx # Copy /path/to/data to /dev/sdx after mounting it using 'cp'."
     echo "  $0 -R /path/to/data /dev/sdx # Copy /path/to/data to /dev/sdx after mounting it using 'rsync'."
+    echo "  $0 -M /dev/sdx               # Mount /dev/sdx to $MOUNT_POINT."
+    echo "  $0 -U                        # Unmount any device from $MOUNT_POINT and remove the directory."
     echo "  $0 -L                        # List all block devices."
     echo "  $0 -F /dev/sdx               # Format /dev/sdx."
 }
@@ -148,6 +152,14 @@ case "$1" in
         safe_unmount "$MOUNT_POINT"
 	"$SUDO" rmdir "$MOUNT_POINT"
         ;;
+    -M | -m ) 
+	check_dependencies
+        ensure_mounted "$2"
+	;;
+    -U | -u )
+        safe_unmount "$MOUNT_POINT"
+	"$SUDO" rmdir "$MOUNT_POINT"
+	;;
     -L | -l)
         lsblk -o NAME,MODEL,SERIAL,VENDOR,TRAN
         ;;
